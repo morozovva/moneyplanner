@@ -1,11 +1,22 @@
-import 'package:flutter/material.dart';
-import './widgets/chart.dart';
+import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import './widgets/chart.dart';
 import './widgets/new_transaction.dart';
 import './models/transaction.dart';
 import './widgets/transaction_list.dart';
 
-void main() => runApp(MoneyPlannerApp());
+void main() {
+  // WidgetsFlutterBinding.ensureInitialized();
+  // SystemChrome.setPreferredOrientations([
+  //   DeviceOrientation.portraitUp,
+  //   DeviceOrientation.portraitDown,
+  // ]);
+  runApp(MoneyPlannerApp());
+}
 
 class MoneyPlannerApp extends StatelessWidget {
   @override
@@ -14,7 +25,7 @@ class MoneyPlannerApp extends StatelessWidget {
       title: 'Money Planner',
       theme: ThemeData(
         primarySwatch: Colors.lime,
-        fontFamily: 'Quicksand',
+        // fontFamily: 'Quicksand',
       ),
       home: MyHomePage(),
     );
@@ -30,6 +41,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final List<Transaction> _userTransactions = [];
+
+  bool _showChart = false;
 
   List<Transaction> get _recentTransactions {
     return _userTransactions
@@ -73,34 +86,101 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Money Planner App',
-          style: TextStyle(fontWeight: FontWeight.bold),
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final appBar = Platform.isIOS
+        ? CupertinoNavigationBar(
+            backgroundColor: Theme.of(context).primaryColor,
+            middle: Text(
+              'Money Planner App',
+              // style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () => _startAddTransaction(context),
+                  child: Icon(CupertinoIcons.add),
+                ),
+              ],
+            ),
+          )
+        : AppBar(
+            title: Text(
+              'Money Planner App',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            actions: <Widget>[
+              IconButton(
+                onPressed: () => _startAddTransaction(context),
+                icon: Icon(Icons.add),
+              ),
+            ],
+          );
+    final txList = SizedBox(
+      height: (mediaQuery.size.height - mediaQuery.padding.top) * 0.6,
+      child: Expanded(
+        child: TransactionList(
+          transactions: _userTransactions,
+          deleteTx: _deleteTransaction,
         ),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () => _startAddTransaction(context),
-            icon: Icon(Icons.add),
-          ),
-        ],
       ),
-      body: Column(
+    );
+    final appBody = SafeArea(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          Chart(_recentTransactions),
-          Expanded(
-            child: TransactionList(
-                transactions: _userTransactions, deleteTx: _deleteTransaction),
-          ),
+          if (isLandscape)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Show chart",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Switch.adaptive(
+                    activeColor: Colors.green,
+                    value: _showChart,
+                    onChanged: (val) {
+                      setState(() {
+                        _showChart = val;
+                      });
+                    }),
+              ],
+            ),
+          if (!isLandscape)
+            SizedBox(
+              height: (mediaQuery.size.height - mediaQuery.padding.top) * 0.3,
+              child: Chart(_recentTransactions),
+            ),
+          if (!isLandscape) txList,
+          if (isLandscape)
+            _showChart
+                ? SizedBox(
+                    height:
+                        (mediaQuery.size.height - mediaQuery.padding.top) * 0.7,
+                    child: Chart(_recentTransactions),
+                  )
+                : txList,
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _startAddTransaction(context),
-        child: Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+            child: appBody,
+            navigationBar: appBar as ObstructingPreferredSizeWidget,
+          )
+        : Scaffold(
+            appBar: appBar as PreferredSizeWidget,
+            body: appBody,
+            floatingActionButton: Platform.isIOS
+                ? Container()
+                : FloatingActionButton(
+                    onPressed: () => _startAddTransaction(context),
+                    child: Icon(Icons.add),
+                  ),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerDocked,
+          );
   }
 }
