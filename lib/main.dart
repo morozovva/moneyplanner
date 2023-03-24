@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import './widgets/chart.dart';
 import './widgets/new_transaction.dart';
@@ -15,10 +14,12 @@ void main() {
   //   DeviceOrientation.portraitUp,
   //   DeviceOrientation.portraitDown,
   // ]);
-  runApp(MoneyPlannerApp());
+  runApp(const MoneyPlannerApp());
 }
 
 class MoneyPlannerApp extends StatelessWidget {
+  const MoneyPlannerApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -27,7 +28,7 @@ class MoneyPlannerApp extends StatelessWidget {
         primarySwatch: Colors.lime,
         // fontFamily: 'Quicksand',
       ),
-      home: MyHomePage(),
+      home: const MyHomePage(),
     );
   }
 }
@@ -48,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return _userTransactions
         .where((el) => el.date.isAfter(
               DateTime.now().subtract(
-                Duration(days: 7),
+                const Duration(days: 7),
               ),
             ))
         .toList();
@@ -84,6 +85,45 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  List<Widget> _buildLandscapeContent(
+      MediaQueryData mediaQuery, Widget txList) {
+    return [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "Show chart",
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Switch.adaptive(
+              activeColor: Colors.green,
+              value: _showChart,
+              onChanged: (val) {
+                setState(() {
+                  _showChart = val;
+                });
+              }),
+        ],
+      ),
+      _showChart
+          ? SizedBox(
+              height: (mediaQuery.size.height - mediaQuery.padding.top) * 0.7,
+              child: Chart(_recentTransactions),
+            )
+          : txList,
+    ];
+  }
+
+  List<Widget> _buildPortraitContent(MediaQueryData mediaQuery, Widget txList) {
+    return [
+      SizedBox(
+        height: (mediaQuery.size.height - mediaQuery.padding.top) * 0.3,
+        child: Chart(_recentTransactions),
+      ),
+      txList
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
@@ -91,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final appBar = Platform.isIOS
         ? CupertinoNavigationBar(
             backgroundColor: Theme.of(context).primaryColor,
-            middle: Text(
+            middle: const Text(
               'Money Planner App',
               // style: TextStyle(fontWeight: FontWeight.bold),
             ),
@@ -100,20 +140,20 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 GestureDetector(
                   onTap: () => _startAddTransaction(context),
-                  child: Icon(CupertinoIcons.add),
+                  child: const Icon(CupertinoIcons.add),
                 ),
               ],
             ),
           )
         : AppBar(
-            title: Text(
+            title: const Text(
               'Money Planner App',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             actions: <Widget>[
               IconButton(
                 onPressed: () => _startAddTransaction(context),
-                icon: Icon(Icons.add),
+                icon: const Icon(Icons.add),
               ),
             ],
           );
@@ -130,45 +170,15 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          if (isLandscape)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Show chart",
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Switch.adaptive(
-                    activeColor: Colors.green,
-                    value: _showChart,
-                    onChanged: (val) {
-                      setState(() {
-                        _showChart = val;
-                      });
-                    }),
-              ],
-            ),
-          if (!isLandscape)
-            SizedBox(
-              height: (mediaQuery.size.height - mediaQuery.padding.top) * 0.3,
-              child: Chart(_recentTransactions),
-            ),
-          if (!isLandscape) txList,
-          if (isLandscape)
-            _showChart
-                ? SizedBox(
-                    height:
-                        (mediaQuery.size.height - mediaQuery.padding.top) * 0.7,
-                    child: Chart(_recentTransactions),
-                  )
-                : txList,
+          if (isLandscape) ..._buildLandscapeContent(mediaQuery, txList),
+          if (!isLandscape) ..._buildPortraitContent(mediaQuery, txList),
         ],
       ),
     );
     return Platform.isIOS
         ? CupertinoPageScaffold(
-            child: appBody,
             navigationBar: appBar as ObstructingPreferredSizeWidget,
+            child: appBody,
           )
         : Scaffold(
             appBar: appBar as PreferredSizeWidget,
@@ -177,7 +187,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ? Container()
                 : FloatingActionButton(
                     onPressed: () => _startAddTransaction(context),
-                    child: Icon(Icons.add),
+                    child: const Icon(Icons.add),
                   ),
             floatingActionButtonLocation:
                 FloatingActionButtonLocation.centerDocked,

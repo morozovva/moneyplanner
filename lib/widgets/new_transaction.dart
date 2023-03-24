@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:money_planner/widgets/adaptive_button.dart';
@@ -8,7 +5,7 @@ import 'package:money_planner/widgets/adaptive_button.dart';
 class NewTransaction extends StatefulWidget {
   final Function addTx;
 
-  NewTransaction(this.addTx);
+  const NewTransaction(this.addTx, {super.key});
 
   @override
   State<NewTransaction> createState() => _NewTransactionState();
@@ -30,7 +27,7 @@ class _NewTransactionState extends State<NewTransaction> {
     widget.addTx(
       enteredTitle,
       enteredAmount,
-      _selectedDate == null ? DateTime.now() : _selectedDate,
+      _selectedDate ?? DateTime.now(),
     );
 
     Navigator.of(context).pop();
@@ -73,10 +70,11 @@ class _NewTransactionState extends State<NewTransaction> {
               TextField(
                 decoration: const InputDecoration(labelText: "Amount"),
                 controller: _amountController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 onSubmitted: (_) => _submitData(),
               ),
-              Container(
+              SizedBox(
                 height: 70,
                 child: Row(
                   children: [
@@ -97,7 +95,7 @@ class _NewTransactionState extends State<NewTransaction> {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
-                    textStyle: TextStyle(fontWeight: FontWeight.w500)),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w500)),
                 child: const Text("Submit"),
               )
             ],
